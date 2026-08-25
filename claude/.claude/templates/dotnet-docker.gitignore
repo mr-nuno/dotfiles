@@ -1,0 +1,76 @@
+# .gitignore — .NET Web API + Docker (see .claude/conventions/dotnet.md, .claude/rules/code-docker.md)
+# Curated for the standard stack: FastEndpoints, EF Core, Serilog+Seq, Testcontainers, Scalar.
+# Kept in source control on purpose: global.json, .editorconfig, appsettings.json,
+# appsettings.Development.json, EF migrations, Dockerfile, docker-compose.yml.
+
+# ---- Build output ----
+bin/
+obj/
+publish/
+artifacts/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+
+# ---- IDE / user files ----
+*.user
+*.suo
+*.rsuser
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+.idea/
+*.sln.iml
+
+# ---- NuGet ----
+*.nupkg
+*.snupkg
+.nuget/
+project.lock.json
+project.assets.json
+
+# ---- Test / coverage output ----
+[Tt]est[Rr]esults/
+*.trx
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+BenchmarkDotNet.Artifacts/
+
+# ---- Local database artifacts (EF migrations themselves ARE committed) ----
+*.mdf
+*.ldf
+*.ndf
+
+# ---- Secrets / environment ----
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+appsettings.Local.json
+secrets.json
+*.pfx
+*.p12
+*.key
+*.pem
+
+# ---- Docker ----
+docker-compose.override.yml
+docker-compose.*.local.yml
+.docker/
+**/.data/          # local bind-mounted volume data (SQL Server, Seq)
+
+# ---- Logs (Serilog file sink, if enabled) ----
+logs/
+*.log
+
+# ---- OS / misc ----
+.DS_Store
+Thumbs.db
+*.swp

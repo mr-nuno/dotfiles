@@ -1,0 +1,32 @@
+# .dockerignore — shared superset for .NET / React build contexts.
+# Copy into a project root as `.dockerignore`. Keeps the build context small and
+# stops local secrets / build output from leaking into the image.
+
+# .NET build output
+**/bin/
+**/obj/
+**/TestResults/
+
+# Node / frontend build output
+**/node_modules/
+**/dist/
+
+# IDE / user files
+**/.vs/
+**/.vscode/
+**/.idea/
+**/*.user
+
+# VCS & CI
+**/.git/
+**/.github/
+
+# Secrets / environment (never bake into an image)
+**/.env
+**/.env.*
+!**/.env.example
+
+# Docker files themselves
+**/Dockerfile
+**/.dockerignore
+**/docker-compose*.yml

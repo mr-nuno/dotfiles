@@ -1,0 +1,23 @@
+# nginx server block for a React SPA — copy into a project as `nginx.conf.template`.
+# Placed in /etc/nginx/templates/ so nginx substitutes ${VARS} at container start.
+# ${API_URL} (and any other vars) are provided by the environment / entrypoint.
+
+server {
+    listen 80;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Proxy API calls to the backend (keep the Authorization header).
+    location /api/ {
+        proxy_pass ${API_URL}/;
+        proxy_set_header Host $host;
+        proxy_set_header Authorization $http_authorization;
+    }
+
+    # SPA fallback — every non-file route serves index.html.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

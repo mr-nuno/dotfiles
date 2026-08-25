@@ -7,6 +7,7 @@ Ensure the target machine has the core tools installed before deploying the conf
 * `git`
 * `stow`
 * `starship` (for the terminal prompt)
+* `claude`
 
 ```bash
 sudo dnf install git stow -y
@@ -49,11 +50,18 @@ rm ~/.config/starship.toml
 # DO NOT remove 00-env.sh or 20-tools.sh!
 ```
 
-**5. Deploy the configurations**
+**5. Claude Code configurations**
+Ensure the base `.claude` directory exists before stowing, so Stow creates symlinks inside the folder rather than trying to hijack the entire directory (which would interfere with untracked local files like `.credentials.json`).
+```bash
+mkdir -p ~/.claude
+```
+
+**6. Deploy the configurations**
 Use Stow to automatically map the symlinks to your home folder. You can use the `--simulate` (or `-n`) flag first if you want to preview the changes safely.
 ```bash
 stow bash
 stow starship
+stow claude
 ```
 
 ## Local Overrides (Untracked)

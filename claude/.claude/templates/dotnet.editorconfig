@@ -1,0 +1,84 @@
+# .editorconfig — .NET Web API (+ web assets) — see .claude/conventions/dotnet.md "Code Style"
+# Encodes the house style: file-scoped namespaces, var, primary constructors,
+# expression-bodied members, mandatory braces, sealed by default.
+# Note: `<Nullable>enable</Nullable>` and "no #region" are enforced in the .csproj /
+# by review — not expressible here. `ct` parameter naming is a review convention.
+
+root = true
+
+# ---- All files ----
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# ---- Markdown (trailing whitespace can be meaningful) ----
+[*.md]
+trim_trailing_whitespace = false
+
+# ---- Project / build / config files ----
+[*.{csproj,props,targets,json,yml,yaml}]
+indent_size = 2
+
+# ---- Web assets (TypeScript/React — Prettier/ESLint own the rest) ----
+[*.{ts,tsx,js,jsx,css,scss,html}]
+indent_size = 2
+
+# ---- C# ----
+[*.cs]
+indent_size = 4
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+csharp_using_directive_placement = outside_namespace:warning
+
+# File-scoped namespaces
+csharp_style_namespace_declarations = file_scoped:warning
+
+# Primary constructors (where appropriate)
+csharp_style_prefer_primary_constructors = true:suggestion
+
+# var everywhere
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = true:suggestion
+
+# Expression-bodied members for simple methods/properties
+csharp_style_expression_bodied_methods = true:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+csharp_style_expression_bodied_accessors = true:suggestion
+csharp_style_expression_bodied_lambdas = true:suggestion
+csharp_style_expression_bodied_constructors = false:silent
+
+# Mandatory braces — no single-line control-flow bodies
+csharp_prefer_braces = true:warning
+
+# Modern language features
+csharp_style_prefer_switch_expression = true:suggestion
+csharp_style_prefer_pattern_matching = true:suggestion
+csharp_style_throw_expression = true:suggestion
+csharp_style_prefer_null_check_over_type_check = true:suggestion
+csharp_prefer_simple_using_statement = true:suggestion
+dotnet_style_namespace_match_folder = true:suggestion
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:warning
+dotnet_style_readonly_field = true:warning
+
+# Allman braces (standard C#)
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+
+# ---- Analyzer severities aligned to the conventions ----
+# Seal types not designed for inheritance
+dotnet_diagnostic.CA1852.severity = warning
+# Braces / namespace / usings enforced above also surface as build warnings
+dotnet_diagnostic.IDE0011.severity = warning
+dotnet_diagnostic.IDE0161.severity = warning
+
+# The house convention names EVERY CancellationToken parameter `ct` (see .claude/conventions/dotnet.md).
+# CA1725 would force overrides/interface impls to match framework names (e.g. MediatR's
+# `cancellationToken`, DbContext.SaveChangesAsync); the `ct` convention deliberately wins, so disable it.
+dotnet_diagnostic.CA1725.severity = none
