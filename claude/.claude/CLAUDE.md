@@ -30,26 +30,14 @@ For React projects, see `conventions/react.md` for standard conventions and patt
 
 ## Architecture reference (`docs/`)
 
-Deep-dive docs the .NET conventions link into:
-
-- `docs/folder-structure.md` — directory tree & naming.
-- `docs/configuration.md` — Program.cs, appsettings, DI, health checks.
-- `docs/interfaces.md` — core interfaces & claim mappings.
-- `docs/domain-entities.md` — aggregates, entities, StronglyTypedId, enumerations.
-- `docs/responses-and-mapping.md` — response records, DTO tiers, pagination.
-- `docs/api-response-pattern.md` — `ApiResponse`, `ResultExtensions`, endpoints.
-- `docs/auth-and-security.md` — JWT bearer, policies, endpoint auth.
-- `docs/resilience-and-caching.md` — HttpClient resilience & caching.
-- `docs/testing.md` — assertions, Testcontainers, Respawn.
-- `docs/ci-cd-docker.md` — pipelines, Docker, docker-compose.
+Deep-dive docs the .NET conventions link into live in `docs/` — read the
+relevant one when the conventions reference it.
 
 ## Scaffolding templates (`templates/`)
 
-Reusable root files for standing up a new .NET Web API / React project live in `templates/`
-(`Directory.Build.props`, `Directory.Packages.props`, `global.json`, `dotnet.editorconfig`,
-`docker-compose.yml`, the `dotnet-*`/`react-nginx` Dockerfiles, `.gitignore`/`.dockerignore`,
-`env.example`). Copy the ones you need into the project root and replace any `{Api}`/`{Worker}`/
-`{App}` placeholders.
+Reusable root files for standing up a new .NET Web API / React project live in
+`templates/`. Copy the ones you need into the project root and replace any
+`{Api}`/`{Worker}`/`{App}` placeholders.
 
 ## Working style
 

@@ -1,3 +1,15 @@
+---
+paths:
+  - "**/Dockerfile*"
+  - "**/*.dockerfile"
+  - "**/docker-compose*.yml"
+  - "**/docker-compose*.yaml"
+  - "**/compose*.yml"
+  - "**/nginx*.conf*"
+  - "**/.dockerignore"
+  - "**/entrypoint*.sh"
+---
+
 # Docker Style
 
 - Build once, run anywhere
