@@ -56,11 +56,16 @@ alias downloads='cd ~/Downloads'
 alias lg="lazygit"
 
 # Search
-find() {
-    # 1. Search recursively, case-insensitive, ignoring junk
-    # 2. Use 'sed' with a pipe separator | to avoid slash errors
-    grep -rin --exclude-dir={.git,node_modules,dist,bin,obj} "$1" . | \
+function find {
+    # 1. Search recursively (-i case-insensitive, -n line numbers, --hidden includes dotfiles)
+    # 2. rg läser automatiskt .gitignore och .ignore
+    rg -in --hidden "$1" . | \
     sed -E "s|^([^:]+):([^:]+):|Filename: \1, Row: \2\nContent: |"
+}
+
+# Use ripgrep instead of grep because rg honors .ignore files
+function grep {
+    rg --hidden "$@"
 }
 
 # NVM

@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(~/Projects/private/**)",
+      "Read(**/private/**)"
+    ],
+    "allow": [
+      "Bash(git:*)",
+      "Bash(dotnet:*)",
+      "Bash(docker:*)",
+      "Bash(docker-compose:*)",
+      "Bash(mkdir:*)",
+      "Bash(ls:*)",
+      "Read(//home/peter/.claude/**)",
+      "Bash(npx eslint *)",
+      "Bash(npx vite *)",
+      "Bash(az --version)",
+      "Bash(az devops *)",
+      "Bash(az pipelines *)",
+      "Bash(az repos *)"
+    ],
+    "defaultMode": "plan"
+  },
+  "model": "opus[1m]",
+  "tui": "fullscreen",
+  "skipAutoPermissionPrompt": true,
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "filesystem": {
+      "denyRead": [
+        "~/Projects/private/**",
+        "~/Projects/**/private/**"
+      ]
+    }
+  }
+}

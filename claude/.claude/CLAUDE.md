@@ -14,6 +14,22 @@
 - `fix: added validation to add pet`
 - `chore: updated readme`
 
+## Code search
+
+- Default to `rg` (ripgrep) for code search — **not** `grep -r`.
+  `rg` honors `~/Projects/.ignore` (currently `**/private/`) with no flags.
+- The `grep` in this shell is a shim over `ugrep` that reads **`.gitignore`
+  only** — it silently skips `.ignore`.
+- If `grep` is used anyway (including when asked for "grep" by name), it
+  **must** carry `--ignore-files=.ignore`:
+
+      grep -rn --ignore-files=.ignore PATTERN path/
+
+  The flag is additive — `.gitignore` and `.ignore` both apply.
+- For a deliberately exhaustive sweep (secret scans, audits, "is this
+  anywhere on disk"), use `rg --no-ignore` and say so in the results —
+  otherwise the answer is scoped, not complete.
+
 ## .NET Web API Projects
 
 For .NET Web API projects, see `conventions/dotnet.md` for standard conventions and patterns.
