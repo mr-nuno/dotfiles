@@ -1,2 +1,15 @@
 bash/.bashrc.d/00-env.sh
 bash/.bashrc.d/20-tools.sh
+
+# Claude Code runtime state
+claude/.claude/.credentials.json
+claude/.claude/history.jsonl
+claude/.claude/policy-limits.json
+claude/.claude/remote-settings.json
+claude/.claude/backups/
+claude/.claude/cache/
+claude/.claude/plugins/
+claude/.claude/projects/
+claude/.claude/sessions/
+claude/.claude/session-env/
+claude/.claude/shell-snapshots/
