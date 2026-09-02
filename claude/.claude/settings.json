@@ -1,4 +1,11 @@
 {
   "tui": "default",
-  "theme": "dark"
+  "theme": "dark",
+  "permissions": {
+    "defaultMode": "plan"
+  },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  }
 }
