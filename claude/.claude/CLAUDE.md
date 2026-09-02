@@ -7,6 +7,8 @@
 - Before any git push, verify you are on a feature/fix/chore branch, not `main` or `develop`
 - Conventional Commits: `feat`, `fix`, `refactor`, `chore`, `test`, `docs`, `style`
 - Never include any claude references in commits or pull requests
+- NEVER include "Co-Authored-By" or "Generated with Claude" in commit messages.
+- Use clean, human-only commit messages.
 
 ### Commit message examples
 
