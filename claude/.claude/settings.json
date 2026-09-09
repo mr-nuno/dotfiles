@@ -2,10 +2,30 @@
   "tui": "default",
   "theme": "dark",
   "permissions": {
-    "defaultMode": "plan"
+    "defaultMode": "plan",
+    "deny": [
+      "Read(**/private/**)",
+      "Read(//home/peter/Projects/private/**)",
+      "Edit(**/private/**)"
+    ]
   },
   "attribution": {
     "commit": "",
     "pr": ""
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|BashOutput|Read|Edit|Write|NotebookEdit|Grep|Glob|Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/block-private-paths.py",
+            "timeout": 10,
+            "statusMessage": "Checking for private/ paths..."
+          }
+        ]
+      }
+    ]
   }
 }

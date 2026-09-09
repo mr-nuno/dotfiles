@@ -44,9 +44,6 @@ alias shutdown='shutdown now'
 # LKAB VDI
 alias vdi='npm run vdi --prefix ~/Projects/tools'
 
-# Files
-alias files='setsid nautilus >/dev/null 2>&1'
-
 # Home
 alias projects='cd ~/Projects'
 alias home='cd ~/'

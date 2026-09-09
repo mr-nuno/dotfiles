@@ -14,3 +14,13 @@ claude/.claude/sessions/
 claude/.claude/session-env/
 claude/.claude/shell-snapshots/
 claude/.claude/.last-cleanup
+claude/.claude/daemon*
+claude/.claude/file-history
+claude/.claude/ide
+claude/.claude/jobs
+claude/.claude/paste*
+claude/.claude/plans
+claude/.claude/state
+claude/.claude/skills
+claude/.claude/.last-update*
+claude/.claude/policy-limits*
