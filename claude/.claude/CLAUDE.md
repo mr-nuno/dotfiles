@@ -43,6 +43,10 @@ Reusable root files for standing up a new .NET Web API / React project live in
 
 ## Working style
 
+- **Sensitive data**: never read, search, or reference anything under a `private/`
+  folder — real personal data lives there, and tool output is sent to the model. Use the
+  purpose-built dummy fixture instead. Enforced by a `PreToolUse` hook, not by attention.
+  See `rules/sensitive-data.md`.
 - **Docker**: build once / run anywhere; multi-stage builds; runtime config via env vars +
   nginx templates. See `rules/code-docker.md`.
 - **Terminal**: prefix any question or clarification request with a ❓ emoji.
