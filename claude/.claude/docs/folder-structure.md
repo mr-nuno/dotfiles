@@ -48,16 +48,18 @@ src/
       AuditableEntity.cs
       IAggregateRoot.cs
       Enumeration.cs
+      VogenDefaults.cs                       <- assembly-wide Vogen defaults (Guid IDs)
     Order/                                   <- one folder per aggregate, named for the entity
       OrderAggregate.cs                      <- aggregate root, class OrderAggregate (: AuditableEntity, IAggregateRoot)
       OrderLine.cs                           <- child entity
-      OrderId.cs                             <- StronglyTypedId
+      OrderId.cs                             <- Vogen ID ([ValueObject] partial struct)
       OrderStatus.cs                         <- Enumeration
       Specifications/
         OrderByCustomerSpec.cs
   Infrastructure/
     Persistence/
       AppDbContext.cs
+      VogenEfCoreConverters.cs               <- [EfCoreConverter<TId>] per ID
       Configurations/
       Migrations/
     Services/
