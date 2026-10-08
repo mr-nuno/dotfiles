@@ -24,7 +24,8 @@ For .NET Web API projects, see `conventions/dotnet.md` for standard conventions 
 
 ### DO NOT
 
-- **DO NOT upgrade MediatR past `12.5.0`.** Version 13.0.0 and later require a paid commercial license (LuckyPennySoftware). `12.5.0` is the last release under the free Apache-2.0 license.
+- **DO NOT use MediatR in new code.** Version 13.0.0 and later require a paid commercial license (LuckyPennySoftware). Use [Mediator](https://github.com/martinothamar/Mediator) (`martinothamar/Mediator`, MIT, source generator) instead.
+- **DO NOT upgrade MediatR past `12.5.0`** in existing projects that still use it. `12.5.0` is the last release under the free Apache-2.0 license.
 
 ## React projects
 

@@ -77,22 +77,22 @@ DTOs shared across different features. Live in `Application/Common/Dtos/`:
 
 ## Vertical Slice — Feature File Structure
 
-Each request file (Command/Query) contains the request record, the MediatR handler, and the validator as **inner classes**:
+Each request file (Command/Query) contains the request record, the Mediator handler, and the validator as **inner classes**. Commands implement `ICommand<Result<T>>` with an `ICommandHandler<,>`; queries implement `IQuery<Result<T>>` with an `IQueryHandler<,>`. Handlers return `ValueTask<T>`, not `Task<T>`:
 
 ```csharp
 using FluentValidation;
 
 namespace Application.Features.Products.CreateProduct;
 
-public sealed record CreateProductCommand(string Name, decimal Price) : IRequest<Result<CreateProductResponse>>
+public sealed record CreateProductCommand(string Name, decimal Price) : ICommand<Result<CreateProductResponse>>
 {
     public sealed class Handler(
         IApplicationDbContext db,
-        IDateTimeProvider dateTime) : IRequestHandler<CreateProductCommand, Result<CreateProductResponse>>
+        IDateTimeProvider dateTime) : ICommandHandler<CreateProductCommand, Result<CreateProductResponse>>
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<Handler>();
 
-        public async Task<Result<CreateProductResponse>> Handle(CreateProductCommand request, CancellationToken ct)
+        public async ValueTask<Result<CreateProductResponse>> Handle(CreateProductCommand request, CancellationToken ct)
         {
             var product = new Product(ProductId.FromNewGuid(), request.Name, request.Price);
             db.Products.Add(product);
