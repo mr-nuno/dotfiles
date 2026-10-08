@@ -17,10 +17,12 @@ into the new repo root, then adapt each:
 
 1. `global.json` → bump `version` to the installed .NET 10 SDK (`dotnet --version`).
 2. `Directory.Build.props` → `<Nullable>enable</Nullable>`, `LangVersion`, `ImplicitUsings`, `EnforceCodeStyleInBuild`, `TreatWarningsAsErrors` (relax with `<WarningsNotAsErrors>` if needed).
-3. `Directory.Packages.props` → Central Package Management. Keep `MediatR 12.5.0` and `StronglyTypedId 1.0.0-beta08` pinned; run `dotnet list package` (outdated) and bump the rest.
+3. `Directory.Packages.props` → Central Package Management. Keep `MediatR 12.5.0` pinned and Vogen on stable 8.x; run `dotnet list package` (outdated) and bump the rest.
 4. `dotnet.editorconfig` → save as `.editorconfig`.
 5. `dotnet-docker.gitignore` → save as `.gitignore`.
 6. Docker: copy the matching Dockerfile to its **archetype-specific destination** — `dotnet-api` → `src/{Api}/Dockerfile`, `dotnet-worker` → `src/{Worker}/Dockerfile`, `dotnet-spa-bff` → root `Dockerfile`, `react-nginx` → `frontend/Dockerfile` (build contexts differ; the API path is what `docker-compose.yml` expects). Also copy `docker.dockerignore` → `.dockerignore`, `docker-compose.yml` (API + SQL Server + Seq), and `env.example` → `.env.example`. Replace the `{Api}`/`{Worker}` placeholders with your project names; each Dockerfile's restore layer already lists the referenced `Application`/`Domain`/`Infrastructure` projects (adjust those `COPY` lines to match your actual references — restore needs every referenced csproj present). For a **collapsed layout** (see "Solution Layout" below) copy the matching variant instead — `dotnet-api-single` / `dotnet-worker-single` (1-project) or `dotnet-api-core` / `dotnet-worker-core` (2-project, host + `Core`); the destination path is unchanged. See `.claude/docs/ci-cd-docker.md`.
+
+Once the `Domain` and `Infrastructure` projects exist, also copy `vogen-defaults.cs` → `Domain/Common/VogenDefaults.cs` and `vogen-efcore-converters.cs` → `Infrastructure/Persistence/VogenEfCoreConverters.cs` (replace `{Namespace}`/`{Entity}`).
 
 All are committed to source control (never gitignored). Only after these exist should you
 scaffold the `Api`/`Application`/`Domain`/`Infrastructure` projects and start on features.
@@ -34,7 +36,7 @@ scaffold the `Api`/`Application`/`Domain`/`Infrastructure` projects and start on
 - **FluentValidation** — request validation (integrated via FastEndpoints)
 - **Ardalis.Result** — result pattern for service/handler returns
 - **Ardalis.Specification** — encapsulate common/reusable EF Core queries
-- **StronglyTypedId** (`1.0.0-beta08`, source generator) — type-safe entity IDs with auto-generated JSON converters
+- **Vogen** (`8.x`, source generator) — strongly typed entity IDs and value objects, with generated System.Text.Json, TypeConverter and EF Core converters
 - **Serilog** — structured logging (Console + Seq sinks), configured via `appsettings.json`
 - **NSubstitute** — mocking/stubbing in unit tests
 - **Shouldly** — fluent assertion library
@@ -85,7 +87,7 @@ Dockerfile per layout (see `.claude/docs/ci-cd-docker.md`).
 - `global.json` pins to .NET 10 SDK with `rollForward: latestFeature` — copy from `.claude/templates/global.json` (bump `version` to your installed 10.0.x SDK; `latestFeature` then allows same-major feature-band roll-forward)
 - `.editorconfig` enforces file-scoped namespaces, primary constructors, and `var` instead of explicit types — copy from `.claude/templates/dotnet.editorconfig`
 - `Directory.Build.props` at the repo root centralizes `<Nullable>enable</Nullable>`, `LangVersion`, `ImplicitUsings`, and `EnforceCodeStyleInBuild` (makes `.editorconfig` style rules fail the build) — copy from `.claude/templates/Directory.Build.props`
-- `Directory.Packages.props` at the repo root enables Central Package Management — all package versions live here (projects reference packages without a `Version`), including the pinned `MediatR 12.5.0` and `StronglyTypedId 1.0.0-beta08`. Copy from `.claude/templates/Directory.Packages.props`
+- `Directory.Packages.props` at the repo root enables Central Package Management — all package versions live here (projects reference packages without a `Version`), including the pinned `MediatR 12.5.0` and `Vogen` (stable 8.x). Copy from `.claude/templates/Directory.Packages.props`
 - `CancellationToken` parameters are always named `ct`
 - DI registration: `AddApplicationServices()` + `AddInfrastructureServices()` + `AddApiServices()`
 - Middleware ordering is strict: Serilog → ExceptionHandler → Auth → FastEndpoints → HealthChecks → Scalar (dev only)
@@ -117,12 +119,12 @@ Dockerfile per layout (see `.claude/docs/ci-cd-docker.md`).
 
 - Entities inherit `AuditableEntity` (no `Id` property — each entity defines its own strongly typed ID)
 - `AppDbContext.SaveChangesAsync` auto-populates audit fields — handlers never set them manually
-- Strongly typed IDs use `[StronglyTypedId] public partial struct` — generates `New()`, `Empty`, JSON converter, equality
+- Strongly typed IDs use Vogen: `[ValueObject] public readonly partial struct OrderId;` (Guid by default via `VogenDefaults`; `[ValueObject<int>]` for int IDs). Create with `OrderId.FromNewGuid()` / `OrderId.From(value)`
 - IDs serialize as **flat Guid strings** in JSON — never `{ "value": "..." }`. No manual converter registration needed.
-- EF Core value conversions must be configured manually in `IEntityTypeConfiguration<T>`
+- EF Core value conversions come from `[EfCoreConverter<TId>]` markers in `Infrastructure/Persistence/VogenEfCoreConverters.cs`, registered once with `RegisterAllInVogenEfCoreConverters()` in `ConfigureConventions` — no per-entity `HasConversion`
 - Specifications live in `Domain/{Entity}/Specifications/`, named `{Entity}By{Filter}Spec`. Use `WithSpecification()` against `DbSet<T>` — no repositories.
 
-> See `.claude/docs/domain-entities.md` for AuditableEntity, entity examples, StronglyTypedId, EF conversion, and specification code.
+> See `.claude/docs/domain-entities.md` for AuditableEntity, entity examples, Vogen IDs, EF conversion, and specification code.
 
 ### Enumerations
 
@@ -290,9 +292,11 @@ public class MyEndpoint : Endpoint<MyRequest, MyResponse>
 > not repeated here.
 
 - Do not set audit fields (`CreatedBy`, `CreatedAt`, `ModifiedBy`, `ModifiedAt`) manually — the DbContext handles this automatically
-- Do not serialize strongly typed IDs as `{ "value": "..." }` — the `StronglyTypedId` source generator handles flat Guid serialization automatically
+- Do not serialize strongly typed IDs as `{ "value": "..." }` — Vogen's generated System.Text.Json converter handles flat serialization automatically
 - Do not manually register JSON converters for strongly typed IDs — the `[JsonConverter]` attribute on the generated struct is discovered automatically by System.Text.Json
-- Do not define strongly typed IDs as `readonly record struct` manually — use `[StronglyTypedId] public partial struct`
+- Do not define strongly typed IDs as `readonly record struct` manually, and do not use the `StronglyTypedId` package — use Vogen `[ValueObject] public readonly partial struct`
+- Do not create IDs with `default(TId)` or `new TId()` — Vogen fails the build (VOG009/VOG010). Use `TId.FromNewGuid()` or `TId.From(value)`
+- Do not write per-entity `HasConversion(...)` for Vogen IDs — add an `[EfCoreConverter<TId>]` marker to `VogenEfCoreConverters` instead
 - Do not create repository or generic repository abstractions — apply specifications directly against `DbSet<T>` via `WithSpecification()`
 - Do not use any third-party mapping libraries (no AutoMapper, no Mapperly, no Mapster) — use manual extension methods only
 - Do not leak exception details to clients — return generic error message in production
@@ -317,8 +321,8 @@ public class MyEndpoint : Endpoint<MyRequest, MyResponse>
 - Do not store Enumeration instances by name in the database — store by `Id` (int)
 - Do not access `.Id` or `.Name` on Enumeration properties in EF Core LINQ queries (e.g. `OrderBy(x => x.Status.Id)`) — use the property directly (`OrderBy(x => x.Status)`), EF Core applies the value conversion automatically
 - Do not use `Result.Invalid()` for state transition or business rule conflicts — use `Result.Conflict()` (maps to 409)
-- Do not use `HasValueGenerator<T>()` on StronglyTypedId properties — it prevents EF Core from marking the property as `ValueGenerated.OnAdd` in some environments, causing "temporary value" exceptions at runtime that Testcontainers won't catch. Use `ValueGeneratedOnAdd()` instead
-- Do not configure int-backed StronglyTypedId properties without `ValueGeneratedOnAdd()` + `UseIdentityColumn()` + `ValueComparer<TId>` — without all three, EF Core assigns `Id(0)` to every new entity and the change tracker throws a tracking conflict when adding multiple entities
+- Do not use `HasValueGenerator<T>()` on strongly typed ID properties — it prevents EF Core from marking the property as `ValueGenerated.OnAdd` in some environments, causing "temporary value" exceptions at runtime that Testcontainers won't catch. Use `ValueGeneratedOnAdd()` instead
+- Do not configure int-backed ID properties (`[ValueObject<int>]`) without `ValueGeneratedOnAdd()` + `UseIdentityColumn()` — without them EF Core does not generate temporary keys and the change tracker throws a tracking conflict when adding multiple entities in one `SaveChangesAsync`
 - Do not configure a single `ValidIssuer` for Entra ID — set `ValidIssuers` to accept both v1.0 (`sts.windows.net/{tenantId}/`) and v2.0 (`login.microsoftonline.com/{tenantId}/v2.0`) formats, since the issuing endpoint depends on `accessTokenAcceptedVersion` in the app registration manifest
 - Do not set `RoleClaimType = "roles"` in JWT bearer options — the v1.0 JWT handler auto-maps the `roles` claim to `ClaimTypes.Role`, so the default `RoleClaimType` already matches. Setting it to `"roles"` breaks `IsInRole` checks
 - Do not inject a persistence vendor's client (`IDocumentStore`, `IMongoClient`, a concrete `DbContext`) into MediatR handlers — depend on a layer-owned seam (`IApplicationDbContext` for EF, a thin session interface for document stores). No repositories, but no raw client either

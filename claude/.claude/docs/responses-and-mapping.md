@@ -94,7 +94,7 @@ public sealed record CreateProductCommand(string Name, decimal Price) : IRequest
 
         public async Task<Result<CreateProductResponse>> Handle(CreateProductCommand request, CancellationToken ct)
         {
-            var product = new Product(ProductId.New(), request.Name, request.Price);
+            var product = new Product(ProductId.FromNewGuid(), request.Name, request.Price);
             db.Products.Add(product);
             await db.SaveChangesAsync(ct);
 

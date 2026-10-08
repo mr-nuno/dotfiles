@@ -6,8 +6,8 @@
     reference packages WITHOUT a Version attribute (<PackageReference Include="MediatR" />)
     and the version is resolved from here.
 
-    VERSIONS: only MediatR (12.5.0) and StronglyTypedId (1.0.0-beta08) are pinned by
-    convention and MUST NOT drift. Everything else is a .NET 10-era starting point;
+    VERSIONS: only MediatR (12.5.0) is pinned by convention and MUST NOT drift. Vogen
+    stays on the stable 8.x line (no prereleases). Everything else is a .NET 10-era starting point;
     verify/bump against NuGet after the first restore ("dotnet list package" + outdated flag).
   -->
 
@@ -39,8 +39,8 @@
 
   <!-- Domain -->
   <ItemGroup>
-    <!-- PINNED BY CONVENTION: source generator for strongly typed IDs. -->
-    <PackageVersion Include="StronglyTypedId" Version="1.0.0-beta08" />
+    <!-- Source generator for strongly typed IDs and value objects. Stable 8.x only. -->
+    <PackageVersion Include="Vogen" Version="8.0.7" />
   </ItemGroup>
 
   <!-- Infrastructure — EF Core (SQL Server), resilience -->
