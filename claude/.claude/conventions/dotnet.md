@@ -17,7 +17,7 @@ into the new repo root, then adapt each:
 
 1. `global.json` → bump `version` to the installed .NET 10 SDK (`dotnet --version`).
 2. `Directory.Build.props` → `<Nullable>enable</Nullable>`, `LangVersion`, `ImplicitUsings`, `EnforceCodeStyleInBuild`, `TreatWarningsAsErrors` (relax with `<WarningsNotAsErrors>` if needed).
-3. `Directory.Packages.props` → Central Package Management. Keep `MediatR 12.5.0` pinned and Vogen on stable 8.x; run `dotnet list package` (outdated) and bump the rest.
+3. `Directory.Packages.props` → Central Package Management. Keep Mediator on stable 3.x and Vogen on stable 8.x; run `dotnet list package` (outdated) and bump the rest.
 4. `dotnet.editorconfig` → save as `.editorconfig`.
 5. `dotnet-docker.gitignore` → save as `.gitignore`.
 6. Docker: copy the matching Dockerfile to its **archetype-specific destination** — `dotnet-api` → `src/{Api}/Dockerfile`, `dotnet-worker` → `src/{Worker}/Dockerfile`, `dotnet-spa-bff` → root `Dockerfile`, `react-nginx` → `frontend/Dockerfile` (build contexts differ; the API path is what `docker-compose.yml` expects). Also copy `docker.dockerignore` → `.dockerignore`, `docker-compose.yml` (API + SQL Server + Seq), and `env.example` → `.env.example`. Replace the `{Api}`/`{Worker}` placeholders with your project names; each Dockerfile's restore layer already lists the referenced `Application`/`Domain`/`Infrastructure` projects (adjust those `COPY` lines to match your actual references — restore needs every referenced csproj present). For a **collapsed layout** (see "Solution Layout" below) copy the matching variant instead — `dotnet-api-single` / `dotnet-worker-single` (1-project) or `dotnet-api-core` / `dotnet-worker-core` (2-project, host + `Core`); the destination path is unchanged. See `.claude/docs/ci-cd-docker.md`.
@@ -31,7 +31,7 @@ scaffold the `Api`/`Application`/`Domain`/`Infrastructure` projects and start on
 
 - **.NET 10** (LTS)
 - **FastEndpoints** — endpoint routing, request/response binding
-- **MediatR** (`12.5.0`) — CQRS command/query dispatching within vertical slices. Pinned to 12.5.0, the last version under Apache 2.0 license (v13+ is commercially licensed)
+- **Mediator** (`martinothamar/Mediator`, `3.x`, MIT, source generator) — CQRS command/query dispatching within vertical slices. `Mediator.Abstractions` + `Mediator.SourceGenerator`. Replaces MediatR, whose v13+ is commercially licensed
 - **EF Core** — ORM with SQL Server
 - **FluentValidation** — request validation (integrated via FastEndpoints)
 - **Ardalis.Result** — result pattern for service/handler returns
@@ -87,7 +87,7 @@ Dockerfile per layout (see `.claude/docs/ci-cd-docker.md`).
 - `global.json` pins to .NET 10 SDK with `rollForward: latestFeature` — copy from `.claude/templates/global.json` (bump `version` to your installed 10.0.x SDK; `latestFeature` then allows same-major feature-band roll-forward)
 - `.editorconfig` enforces file-scoped namespaces, primary constructors, and `var` instead of explicit types — copy from `.claude/templates/dotnet.editorconfig`
 - `Directory.Build.props` at the repo root centralizes `<Nullable>enable</Nullable>`, `LangVersion`, `ImplicitUsings`, and `EnforceCodeStyleInBuild` (makes `.editorconfig` style rules fail the build) — copy from `.claude/templates/Directory.Build.props`
-- `Directory.Packages.props` at the repo root enables Central Package Management — all package versions live here (projects reference packages without a `Version`), including the pinned `MediatR 12.5.0` and `Vogen` (stable 8.x). Copy from `.claude/templates/Directory.Packages.props`
+- `Directory.Packages.props` at the repo root enables Central Package Management — all package versions live here (projects reference packages without a `Version`), including `Mediator` (stable 3.x) and `Vogen` (stable 8.x). Copy from `.claude/templates/Directory.Packages.props`
 - `CancellationToken` parameters are always named `ct`
 - DI registration: `AddApplicationServices()` + `AddInfrastructureServices()` + `AddApiServices()`
 - Middleware ordering is strict: Serilog → ExceptionHandler → Auth → FastEndpoints → HealthChecks → Scalar (dev only)
@@ -193,7 +193,7 @@ public class MyEndpoint : Endpoint<MyRequest, MyResponse>
 - Resource server only — validates Entra ID JWT bearer tokens, never handles login flows
 - Authorization uses **Entra ID app roles** via policies — never check raw claims/roles directly
 - All endpoints authenticated by default. `AllowAnonymous()` only for health checks and OpenAPI.
-- Authorization belongs in the endpoint `Configure()` — MediatR handlers never perform auth checks.
+- Authorization belongs in the endpoint `Configure()` — Mediator handlers never perform auth checks.
 
 > See `.claude/docs/auth-and-security.md` for JWT bearer config, policy definitions, and endpoint authorization code.
 
@@ -243,9 +243,10 @@ public class MyEndpoint : Endpoint<MyRequest, MyResponse>
 
 ## Coding Patterns
 
-- **Endpoints** live in `Api/Endpoints/` — inject `ISender`, call MediatR, use `ResultExtensions`. No business logic.
-- **Handlers** are **always** inner classes named `Handler` inside the request record — never a separate top-level class. Depend on `IApplicationDbContext`, `IDateTimeProvider`, `IUserSession`. Return `Ardalis.Result<T>` — never throw for expected failures.
-- **Validators** are inner classes of the request record inheriting `AbstractValidator<T>` (pure FluentValidation). Registered via `AddValidatorsFromAssembly` and validated by both the MediatR `ValidationBehavior` (for all callers) and FastEndpoints (for HTTP requests). Always use `.WithMessage()`. For endpoints with a separate request type, also add a standalone `Validator<TRequest>` in `Api/Endpoints/`.
+- **Endpoints** live in `Api/Endpoints/` — inject Mediator's `ISender`, call `Send`, use `ResultExtensions`. No business logic.
+- **Requests** implement `ICommand<Result<T>>` (writes) or `IQuery<Result<T>>` (reads), matching the `Command`/`Query` suffix.
+- **Handlers** are **always** inner classes named `Handler` inside the request record — never a separate top-level class. Implement `ICommandHandler<,>` / `IQueryHandler<,>`. Depend on `IApplicationDbContext`, `IDateTimeProvider`, `IUserSession`. Return `ValueTask<Ardalis.Result<T>>` — never throw for expected failures.
+- **Validators** are inner classes of the request record inheriting `AbstractValidator<T>` (pure FluentValidation). Registered via `AddValidatorsFromAssembly` and validated by both the Mediator `ValidationBehavior` (for all callers) and FastEndpoints (for HTTP requests). Always use `.WithMessage()`. For endpoints with a separate request type, also add a standalone `Validator<TRequest>` in `Api/Endpoints/`.
 - **Result mapping**: Use `result.ToApiResponse()` and `result.ToHttpStatusCode()` — never inline the switch.
 - **EF Core**: Use `IQueryable` projections (`.Select()`) for reads — avoid loading full entities for GET operations.
 - **No repositories**. Inject `IApplicationDbContext` directly. The DbContext *is* the unit of work.
@@ -272,8 +273,8 @@ public class MyEndpoint : Endpoint<MyRequest, MyResponse>
 
 ## When Creating a New Feature
 
-1. Create request record (Command or Query) in `Application/Features/{Feature}/{Action}{Entity}/`
-2. Add the `Handler` inner class with business logic returning `Result<T>`
+1. Create request record (Command implementing `ICommand<Result<T>>`, or Query implementing `IQuery<Result<T>>`) in `Application/Features/{Feature}/{Action}{Entity}/`
+2. Add the `Handler` inner class (`ICommandHandler<,>` / `IQueryHandler<,>`) with business logic returning `ValueTask<Result<T>>`
 3. Add the `Validator` inner class inheriting `AbstractValidator<T>` (FluentValidation) with rules and `.WithMessage()` on each rule. If the endpoint uses a separate request type from the command/query, also add a standalone `Validator<TRequest>` in `Api/Endpoints/{Feature}/`
 4. Add the response record (positional record with strongly typed IDs)
 5. Add manual mapping extension methods co-located with the feature
@@ -313,10 +314,14 @@ public class MyEndpoint : Endpoint<MyRequest, MyResponse>
 - Do not use Moq, FakeItEasy, or any other mocking library — use NSubstitute
 - Do not pass connection strings to Respawn `CreateAsync`/`ResetAsync` — Respawn v7 requires `DbConnection` (use `new SqlConnection(connectionString)`)
 - Do not use the parameterless `MsSqlBuilder()` constructor — pass the image as a constructor parameter: `new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest")`
-- Do not upgrade MediatR beyond `12.5.0` — v13+ is commercially licensed. Pin to `12.5.0` (last Apache 2.0 version) in `Directory.Packages.props`
+- Do not use MediatR in new projects — v13+ is commercially licensed. Use Mediator (`martinothamar/Mediator`). Existing projects still on MediatR stay at or below `12.5.0` (the last Apache 2.0 version) until migrated
+- Do not leave Mediator on its default `Singleton` lifetime — set `options.ServiceLifetime = ServiceLifetime.Scoped`, since handlers depend on the scoped `IApplicationDbContext`. A singleton handler captures a scoped dependency and fails scope validation at startup
+- Do not register pipeline behaviors with `services.AddSingleton(typeof(IPipelineBehavior<,>), ...)` — list them in `options.PipelineBehaviors` so they get the scoped lifetime and a fixed order
+- Do not reference `Mediator.SourceGenerator` from more than one project — it generates `AddMediator` into each project that references it. Reference it only from the project holding `AddApplicationServices()`, with `PrivateAssets="all"`
+- Do not declare generic requests or notifications (`GetByIdQuery<T>`) — Mediator's source generator does not support them
 - Do not hardcode assembly version in health check responses — use `Assembly.GetEntryAssembly()?.GetName().Version` which is set at build time via Docker `VERSION` arg
 - Do not use `FastEndpoints.Validator<T>` in Core/Application layer commands or queries — use `AbstractValidator<T>` from FluentValidation directly; `FastEndpoints.Validator<T>` is only for standalone endpoint request validators in the API layer
-- Do not add inline `Result.Invalid()` format guards in handlers when a MediatR `ValidationBehavior` and FluentValidation validator already cover the same check — the behavior fires before the handler and the guard is dead code
+- Do not add inline `Result.Invalid()` format guards in handlers when the Mediator `ValidationBehavior` and FluentValidation validator already cover the same check — the behavior fires before the handler and the guard is dead code
 - Do not use raw C# `enum` types for domain concepts — use the `Enumeration` base class
 - Do not store Enumeration instances by name in the database — store by `Id` (int)
 - Do not access `.Id` or `.Name` on Enumeration properties in EF Core LINQ queries (e.g. `OrderBy(x => x.Status.Id)`) — use the property directly (`OrderBy(x => x.Status)`), EF Core applies the value conversion automatically
@@ -325,10 +330,10 @@ public class MyEndpoint : Endpoint<MyRequest, MyResponse>
 - Do not configure int-backed ID properties (`[ValueObject<int>]`) without `ValueGeneratedOnAdd()` + `UseIdentityColumn()` — without them EF Core does not generate temporary keys and the change tracker throws a tracking conflict when adding multiple entities in one `SaveChangesAsync`
 - Do not configure a single `ValidIssuer` for Entra ID — set `ValidIssuers` to accept both v1.0 (`sts.windows.net/{tenantId}/`) and v2.0 (`login.microsoftonline.com/{tenantId}/v2.0`) formats, since the issuing endpoint depends on `accessTokenAcceptedVersion` in the app registration manifest
 - Do not set `RoleClaimType = "roles"` in JWT bearer options — the v1.0 JWT handler auto-maps the `roles` claim to `ClaimTypes.Role`, so the default `RoleClaimType` already matches. Setting it to `"roles"` breaks `IsInRole` checks
-- Do not inject a persistence vendor's client (`IDocumentStore`, `IMongoClient`, a concrete `DbContext`) into MediatR handlers — depend on a layer-owned seam (`IApplicationDbContext` for EF, a thin session interface for document stores). No repositories, but no raw client either
+- Do not inject a persistence vendor's client (`IDocumentStore`, `IMongoClient`, a concrete `DbContext`) into Mediator handlers — depend on a layer-owned seam (`IApplicationDbContext` for EF, a thin session interface for document stores). No repositories, but no raw client either
 - Do not call a static Infrastructure helper (e.g. a static PDF/file extractor) directly from a handler — put it behind an `Application`-owned interface so the handler is unit-testable
 - Do not re-implement store conventions (collection/table names, id format, registered indexes) in test setup — share one `ApplyConventions`-style method between the production and integration-test stores
-- Do not register the persistence store, MediatR, and hosted services in one combined DI extension — split infrastructure registration (`AddInfrastructureServices()`) from application registration. This holds **regardless of project count** — keep the methods separate even in a collapsed 1- or 2-project layout where they live in the same assembly
+- Do not register the persistence store, Mediator, and hosted services in one combined DI extension — split infrastructure registration (`AddInfrastructureServices()`) from application registration. This holds **regardless of project count** — keep the methods separate even in a collapsed 1- or 2-project layout where they live in the same assembly
 
 ---
 
@@ -341,7 +346,7 @@ The Infrastructure folder/project owns every concrete dependency on an external 
   - Put cross-cutting load logic (e.g. an id-prefix fallback, derived from the collection-naming convention rather than hardcoded per type) **on the seam**, so handlers call one `LoadAsync<T>(id)` instead of repeating it. Bulk-insert helpers on the seam should be documented as bypassing the unit of work.
 - **Static infrastructure helpers** that a handler invokes (PDF extraction, parsing, hashing) sit behind an interface declared in `Application/Common/Interfaces/` and implemented in Infrastructure — never call a static Infrastructure class from a handler, so the handler stays unit-testable.
 - **Shared store conventions.** Conventions that shape stored data (id separators, collection/table naming, registered indexes) live in one method in Infrastructure and are applied identically by the production store and the integration-test store — tests must never re-derive naming/id rules.
-- **DI registration is split by layer**: `AddInfrastructureServices()` registers the store, external clients, and hosted services; application wiring (MediatR, validators) is registered separately. Do not bundle store + MediatR + hosted services into a single catch-all extension. The split is by **method**, not by assembly — it stays in force in a collapsed 1- or 2-project layout.
+- **DI registration is split by layer**: `AddInfrastructureServices()` registers the store, external clients, and hosted services; application wiring (Mediator, validators) is registered separately. Do not bundle store + Mediator + hosted services into a single catch-all extension. The split is by **method**, not by assembly — it stays in force in a collapsed 1- or 2-project layout.
 
 ---
 

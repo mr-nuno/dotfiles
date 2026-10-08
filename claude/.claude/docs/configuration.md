@@ -24,9 +24,38 @@ builder.Services
     .AddApiServices();
 ```
 
-- **`Application/DependencyInjection.cs`** — registers MediatR (assembly scanning), FluentValidation validators
+- **`Application/DependencyInjection.cs`** — registers Mediator (source-generated `AddMediator`), FluentValidation validators
 - **`Infrastructure/DependencyInjection.cs`** — registers `AppDbContext` / `IApplicationDbContext`, `IDateTimeProvider`, `IUserSession`, EF Core
 - **`Api/DependencyInjection.cs`** — registers FastEndpoints, health checks, authorization policies, OpenAPI + Scalar
+
+### Application registration (Mediator)
+
+`AddMediator` is generated at compile time by `Mediator.SourceGenerator` into the project that references it. Reference the generator from the project that holds `AddApplicationServices()` (`Application`, or `Core` / the app in a collapsed layout), and from **no other** project, or two `AddMediator` methods get generated:
+
+```xml
+<PackageReference Include="Mediator.Abstractions" />
+<PackageReference Include="Mediator.SourceGenerator" PrivateAssets="all" />
+```
+
+```csharp
+public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+{
+    services.AddMediator((MediatorOptions options) =>
+    {
+        options.ServiceLifetime = ServiceLifetime.Scoped;
+        options.Assemblies = [typeof(DependencyInjection)];
+        options.PipelineBehaviors = [typeof(ValidationBehavior<,>)];
+    });
+
+    services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+    return services;
+}
+```
+
+- **`ServiceLifetime.Scoped` is required.** Mediator defaults to `Singleton`, and handlers depend on the scoped `IApplicationDbContext` / `IUserSession`.
+- **Pipeline behaviors go in `options.PipelineBehaviors`**, in execution order. They are then registered with the same scoped lifetime, so `ValidationBehavior` can take the scoped `IEnumerable<IValidator<TMessage>>`. Do not register them separately with `AddSingleton(typeof(IPipelineBehavior<,>), ...)`.
+- `options.Assemblies` takes a `typeof(...)` of any type in each assembly with messages and handlers. The values must be inline `typeof` expressions, since the generator reads them at compile time.
+- A behavior implements `IPipelineBehavior<TMessage, TResponse>` (`where TMessage : IMessage`) and calls `next(message, ct)`. There is no closure-style `next()` as in MediatR.
 
 ## Program.cs — Middleware Ordering
 

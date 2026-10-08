@@ -24,6 +24,8 @@ src/
         IApplicationDbContext.cs
         IDateTimeProvider.cs
         IUserSession.cs
+      Behaviors/
+        ValidationBehavior.cs                <- Mediator pipeline behavior (runs validators)
       Models/
         ApiResponse.cs
         PagedRequest.cs
@@ -104,7 +106,7 @@ src/
     Application/
       Common/{Interfaces,Models}/
       Features/{Feature}/...
-      DependencyInjection.cs          <- AddApplicationServices (MediatR + validators)
+      DependencyInjection.cs          <- AddApplicationServices (Mediator + validators)
     Domain/
       Common/{AuditableEntity,IAggregateRoot,Enumeration}.cs
       {Entity}/...

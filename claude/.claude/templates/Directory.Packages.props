@@ -3,11 +3,11 @@
   <!--
     Directory.Packages.props — Central Package Management (CPM).
     See .claude/conventions/dotnet.md "Tech Stack". Place at the repo root; projects then
-    reference packages WITHOUT a Version attribute (<PackageReference Include="MediatR" />)
+    reference packages WITHOUT a Version attribute (<PackageReference Include="Vogen" />)
     and the version is resolved from here.
 
-    VERSIONS: only MediatR (12.5.0) is pinned by convention and MUST NOT drift. Vogen
-    stays on the stable 8.x line (no prereleases). Everything else is a .NET 10-era starting point;
+    VERSIONS: Mediator stays on the stable 3.x line and Vogen on the stable 8.x line (no
+    prereleases). MediatR is NOT used — v13+ is commercially licensed. Everything else is a .NET 10-era starting point;
     verify/bump against NuGet after the first restore ("dotnet list package" + outdated flag).
   -->
 
@@ -25,8 +25,11 @@
 
   <!-- Application — CQRS, validation, result pattern -->
   <ItemGroup>
-    <!-- PINNED BY CONVENTION: last Apache-2.0 MediatR. Do NOT raise past 12.5.0 (v13+ is commercial). -->
-    <PackageVersion Include="MediatR" Version="12.5.0" />
+    <!-- martinothamar/Mediator (MIT), stable 3.x only. Abstractions + SourceGenerator move together.
+         Reference the generator from the ONE project that holds AddApplicationServices (Application,
+         or Core / the app in a collapsed layout) with PrivateAssets="all". -->
+    <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
+    <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" />
     <!-- 12.x required: FastEndpoints 7.0.0 depends on FluentValidation 12.x; 11.x fails the build
          with CS1705 (assembly version mismatch). -->
     <PackageVersion Include="FluentValidation" Version="12.0.0" />

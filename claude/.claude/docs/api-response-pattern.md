@@ -87,7 +87,7 @@ app.UseFastEndpoints(c =>
 
 ## Endpoint Examples
 
-Endpoints are thin. They inject `ISender`, call MediatR, and use `ResultExtensions` to produce `ApiResponse<T>`:
+Endpoints are thin. They inject Mediator's `ISender`, call `Send`, and use `ResultExtensions` to produce `ApiResponse<T>`:
 
 ```csharp
 namespace Api.Endpoints.Products;

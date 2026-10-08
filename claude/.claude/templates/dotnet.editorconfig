@@ -79,6 +79,6 @@ dotnet_diagnostic.IDE0011.severity = warning
 dotnet_diagnostic.IDE0161.severity = warning
 
 # The house convention names EVERY CancellationToken parameter `ct` (see .claude/conventions/dotnet.md).
-# CA1725 would force overrides/interface impls to match framework names (e.g. MediatR's
+# CA1725 would force overrides/interface impls to match framework names (e.g. Mediator's
 # `cancellationToken`, DbContext.SaveChangesAsync); the `ct` convention deliberately wins, so disable it.
 dotnet_diagnostic.CA1725.severity = none

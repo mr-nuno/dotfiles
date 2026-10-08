@@ -67,7 +67,7 @@ public override void Configure()
 
 - All endpoints are **authenticated by default**. Use `AllowAnonymous()` only for explicitly public endpoints (health checks, OpenAPI).
 - Custom policy requirements and handlers live in `Api/Authorization/`.
-- **Handlers (MediatR)** never perform authorization checks — that is the endpoint's responsibility.
+- **Handlers (Mediator)** never perform authorization checks — that is the endpoint's responsibility.
 
 ## Debugging JWT Authentication
 
