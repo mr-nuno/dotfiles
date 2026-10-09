@@ -9,10 +9,37 @@
   FastEndpoints, Moq instead of NSubstitute), follow the project's established
   patterns. These conventions only apply where there is no conflicting
   project-level convention.
+- **Dispatch style**: the project `CLAUDE.md` records it as `Dispatch: mediator` (these
+  conventions) or `Dispatch: direct handlers` (endpoints call plain handler classes; read
+  `.claude/conventions/dotnet-direct-handlers.md` after this file — it overrides only the
+  dispatch-related sections). See "Choose the dispatch style" below for how the line gets there.
 
 ## New Project Bootstrap
 
-**Step 0 — before writing any code**, copy the ready-made root files from `.claude/templates/`
+### Choose the dispatch style
+
+Settle this before copying any template, in this order:
+
+1. **Project `CLAUDE.md` has a `Dispatch:` line** → follow it.
+2. **The requirements/spec decide it** (names Mediator, direct handlers, "no dispatch library", …)
+   → use that.
+3. **Existing code decides it** → `Mediator.Abstractions` referenced or handlers implementing
+   `ICommandHandler<,>` / `IQueryHandler<,>` → `mediator`; an `IHandler<,>` in
+   `Application/Common/Handlers/` → `direct handlers`. Record what is there; never migrate
+   because of this rule.
+4. **Nothing decides it (new project)** → **ask the user** before scaffolding, with a one-line
+   trade-off per option and a suggestion from the requirements:
+   - *Mediator* — uniform pipeline (validation, logging) for every caller; pick when HTTP,
+     queues, jobs or gRPC share use cases, or a large team needs enforced consistency.
+   - *Direct handlers* — no dispatch library, explicit calls, arch tests instead of a pipeline;
+     pick when HTTP is the main entry point.
+
+In cases 2–4, write the result into the project `CLAUDE.md` (`Dispatch: mediator` or
+`Dispatch: direct handlers`) so the question is never asked again.
+
+### Root files
+
+**Step 0 — before writing any code** (after the dispatch style is settled), copy the ready-made root files from `.claude/templates/`
 into the new repo root, then adapt each:
 
 1. `global.json` → bump `version` to the installed .NET 10 SDK (`dotnet --version`).
@@ -23,6 +50,11 @@ into the new repo root, then adapt each:
 6. Docker: copy the matching Dockerfile to its **archetype-specific destination** — `dotnet-api` → `src/{Api}/Dockerfile`, `dotnet-worker` → `src/{Worker}/Dockerfile`, `dotnet-spa-bff` → root `Dockerfile`, `react-nginx` → `frontend/Dockerfile` (build contexts differ; the API path is what `docker-compose.yml` expects). Also copy `docker.dockerignore` → `.dockerignore`, `docker-compose.yml` (API + SQL Server + Seq), and `env.example` → `.env.example`. Replace the `{Api}`/`{Worker}` placeholders with your project names; each Dockerfile's restore layer already lists the referenced `Application`/`Domain`/`Infrastructure` projects (adjust those `COPY` lines to match your actual references — restore needs every referenced csproj present). For a **collapsed layout** (see "Solution Layout" below) copy the matching variant instead — `dotnet-api-single` / `dotnet-worker-single` (1-project) or `dotnet-api-core` / `dotnet-worker-core` (2-project, host + `Core`); the destination path is unchanged. See `.claude/docs/ci-cd-docker.md`.
 
 Once the `Domain` and `Infrastructure` projects exist, also copy `vogen-defaults.cs` → `Domain/Common/VogenDefaults.cs` and `vogen-efcore-converters.cs` → `Infrastructure/Persistence/VogenEfCoreConverters.cs` (replace `{Namespace}`/`{Entity}`).
+When the test projects exist, copy `dotnet-architecture-tests.cs` → `tests/Architecture.Tests/ArchitectureTests.cs`
+(replace the placeholders and delete the variant block that does not apply — see `.claude/docs/testing.md`).
+
+For the direct-handlers alternative, also copy the `direct-handlers-*` templates (see
+`.claude/conventions/dotnet-direct-handlers.md`, "Bootstrap delta").
 
 All are committed to source control (never gitignored). Only after these exist should you
 scaffold the `Api`/`Application`/`Domain`/`Infrastructure` projects and start on features.
@@ -42,6 +74,7 @@ scaffold the `Api`/`Application`/`Domain`/`Infrastructure` projects and start on
 - **Shouldly** — fluent assertion library
 - **xUnit** — unit and integration testing
 - **Testcontainers** — real SQL Server for integration tests
+- **NetArchTest.Rules** — architecture tests for the layer and slice rules
 - **FastEndpoints.Swagger** — NSwag-based OpenAPI document generation (serves at `/swagger/{documentName}/swagger.json`)
 - **Scalar** — modern API documentation UI (serves at `/scalar/v1`, configured to read from FastEndpoints.Swagger route)
 - **Docker / docker-compose** — containerized development and deployment
@@ -226,6 +259,7 @@ public class MyEndpoint : Endpoint<MyRequest, MyResponse>
 - **MsSqlBuilder** — pass image as constructor parameter: `new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest")`
 - Test naming: `{MethodUnderTest}_Should_{ExpectedBehavior}_When_{Condition}`
 - Integration tests use `WebApplicationFactory<Program>` with `FakeAuthHandler` + `FakeUserSession`
+- Every solution has `tests/Architecture.Tests` (NetArchTest) enforcing layer direction, nested `Handler`/`Validator`, no cross-feature references and no repositories
 
 > See `.claude/docs/testing.md` for assertion/mocking examples, auth bypass, Testcontainers, Respawn, and HttpClient extensions.
 
@@ -245,8 +279,8 @@ public class MyEndpoint : Endpoint<MyRequest, MyResponse>
 
 - **Endpoints** live in `Api/Endpoints/` — inject Mediator's `ISender`, call `Send`, use `ResultExtensions`. No business logic.
 - **Requests** implement `ICommand<Result<T>>` (writes) or `IQuery<Result<T>>` (reads), matching the `Command`/`Query` suffix.
-- **Handlers** are **always** inner classes named `Handler` inside the request record — never a separate top-level class. Implement `ICommandHandler<,>` / `IQueryHandler<,>`. Depend on `IApplicationDbContext`, `IDateTimeProvider`, `IUserSession`. Return `ValueTask<Ardalis.Result<T>>` — never throw for expected failures.
-- **Validators** are inner classes of the request record inheriting `AbstractValidator<T>` (pure FluentValidation). Registered via `AddValidatorsFromAssembly` and validated by both the Mediator `ValidationBehavior` (for all callers) and FastEndpoints (for HTTP requests). Always use `.WithMessage()`. For endpoints with a separate request type, also add a standalone `Validator<TRequest>` in `Api/Endpoints/`.
+- **Handlers** are **always** inner classes named `Handler` inside the request record — never a separate top-level class (enforced by architecture tests). Implement `ICommandHandler<,>` / `IQueryHandler<,>`. Depend on `IApplicationDbContext`, `IDateTimeProvider`, `IUserSession`. Return `ValueTask<Ardalis.Result<T>>` — never throw for expected failures.
+- **Validators** are inner classes named `Validator` of the request record inheriting `AbstractValidator<T>` (pure FluentValidation; enforced by architecture tests). Registered via `AddValidatorsFromAssembly` and validated by both the Mediator `ValidationBehavior` (for all callers) and FastEndpoints (for HTTP requests). Always use `.WithMessage()`. For endpoints with a separate request type, also add a standalone `Validator<TRequest>` in `Api/Endpoints/`.
 - **Result mapping**: Use `result.ToApiResponse()` and `result.ToHttpStatusCode()` — never inline the switch.
 - **EF Core**: Use `IQueryable` projections (`.Select()`) for reads — avoid loading full entities for GET operations.
 - **No repositories**. Inject `IApplicationDbContext` directly. The DbContext *is* the unit of work.

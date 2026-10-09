@@ -46,6 +46,35 @@ Silence them **per test project** in the test `.csproj` — scoped to test proje
 - **Do NOT** disable `TreatWarningsAsErrors` to work around this — keep the build strict everywhere else.
 - Keep the `$(NoWarn);` prefix so any inherited suppressions are preserved.
 
+## Architecture Tests
+
+Every solution has a `tests/Architecture.Tests` project built from
+`.claude/templates/dotnet-architecture-tests.cs` (packages: xunit, Shouldly, `NetArchTest.Rules`).
+It turns the slice and layer conventions into failing tests instead of review comments.
+
+Replace `{Namespace}`, `{DomainType}` (any type in the assembly holding `Domain/`) and
+`{ApplicationType}` (any type in the assembly holding `Application/`). In a 1-project layout both
+are the same type, e.g. `Program`. Rules match namespaces and handler interface **names**, so the
+same file works in the 4-, 2- and 1-project layouts and compiles in either dispatch variant.
+
+| Rule | Test |
+|---|---|
+| `Domain` doesn't reference `Application`, `Infrastructure`, `Api` or EF Core | `Domain_Should_NotDependOnOuterLayers_When_Compiled` |
+| `Application` doesn't reference `Infrastructure`, `Api`, FastEndpoints or `Microsoft.AspNetCore.Http` | `Application_Should_NotDependOnInfrastructureOrHttp_When_Compiled` |
+| Handlers are a nested `Handler` inside a `...Command`/`...Query` record | `Handlers_Should_BeNestedInTheirRequest_When_Declared` |
+| Validators are a nested `Validator` inside a `...Command`/`...Query` record | `Validators_Should_BeNestedInTheirRequest_When_Declared` |
+| `Features.X` doesn't reference `Features.Y` | `Features_Should_NotReferenceOtherFeatures_When_Compiled` |
+| No `*Repository` types | `Solution_Should_NotDeclareRepositories_When_Compiled` |
+
+**Variant blocks** — keep one, delete the other:
+
+- **Mediator only**: `Handlers_Should_NotDispatchOtherRequests_When_Constructed` — no handler takes `ISender`/`IMediator`.
+- **Direct handlers only**: `Handlers_Should_NotInjectOtherHandlers_When_Constructed` — no handler takes another handler.
+
+Standalone `Validator<TRequest>` classes in `Api/Endpoints/` are outside `Application.Features`
+and are not affected by the nesting rule. The CA1707/CA1711 suppression above applies to this
+project too.
+
 ## Integration Test Auth Bypass
 
 The `IntegrationTestWebAppFactory` replaces the authentication scheme with a test scheme that auto-authenticates:

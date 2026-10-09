@@ -40,6 +40,13 @@
     <PackageVersion Include="Ardalis.Specification.EntityFrameworkCore" Version="9.1.0" />
   </ItemGroup>
 
+  <!-- Direct-handlers variant only (.claude/conventions/dotnet-direct-handlers.md).
+       That variant DROPS the two Mediator lines above: handlers are plain classes, scanned and
+       decorated with Scrutor. -->
+  <ItemGroup>
+    <PackageVersion Include="Scrutor" Version="7.0.0" />
+  </ItemGroup>
+
   <!-- Domain -->
   <ItemGroup>
     <!-- Source generator for strongly typed IDs and value objects. Stable 8.x only. -->
@@ -79,6 +86,8 @@
     <PackageVersion Include="Testcontainers.MsSql" Version="4.10.0" />
     <!-- Respawn v7+ (uses DbConnection, not connection strings) -->
     <PackageVersion Include="Respawn" Version="7.0.0" />
+    <!-- Architecture tests (tests/Architecture.Tests) — see templates/dotnet-architecture-tests.cs -->
+    <PackageVersion Include="NetArchTest.Rules" Version="1.3.2" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" />
   </ItemGroup>
 

@@ -80,7 +80,18 @@ tests/
       Products/
         CreateProductTests.cs
         GetProductTests.cs
+  Architecture.Tests/
+    ArchitectureTests.cs          <- from templates/dotnet-architecture-tests.cs
 ```
+
+### Direct-handlers variant
+
+With `.claude/conventions/dotnet-direct-handlers.md` the tree is the same except:
+
+- `Application/Common/Behaviors/` is replaced by `Application/Common/Handlers/`
+  (`IHandler.cs`, `HandlerDecorators.cs`).
+- Handler tests sit next to the integration tests, e.g.
+  `tests/Api.IntegrationTests/Features/Products/CreateProductHandlerTests.cs`.
 
 ## Solution Layout Variants
 
