@@ -23,7 +23,8 @@ A project opts in with one line in its project-level `CLAUDE.md`:
 Dispatch: direct handlers (see ~/.claude/conventions/dotnet-direct-handlers.md)
 ```
 
-Without that line, the Mediator conventions in `dotnet.md` apply.
+The explicit counterpart is `Dispatch: mediator`. A new project without either line gets the
+question at bootstrap — see `dotnet.md`, "Choose the dispatch style".
 
 ## Bootstrap delta
 

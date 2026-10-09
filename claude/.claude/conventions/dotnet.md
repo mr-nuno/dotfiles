@@ -9,14 +9,37 @@
   FastEndpoints, Moq instead of NSubstitute), follow the project's established
   patterns. These conventions only apply where there is no conflicting
   project-level convention.
-- **Alternative — direct handlers**: a project whose `CLAUDE.md` says
-  `Dispatch: direct handlers` drops Mediator and has endpoints call plain handler classes.
-  Read `.claude/conventions/dotnet-direct-handlers.md` after this file; it overrides only the
-  dispatch-related sections.
+- **Dispatch style**: the project `CLAUDE.md` records it as `Dispatch: mediator` (these
+  conventions) or `Dispatch: direct handlers` (endpoints call plain handler classes; read
+  `.claude/conventions/dotnet-direct-handlers.md` after this file — it overrides only the
+  dispatch-related sections). See "Choose the dispatch style" below for how the line gets there.
 
 ## New Project Bootstrap
 
-**Step 0 — before writing any code**, copy the ready-made root files from `.claude/templates/`
+### Choose the dispatch style
+
+Settle this before copying any template, in this order:
+
+1. **Project `CLAUDE.md` has a `Dispatch:` line** → follow it.
+2. **The requirements/spec decide it** (names Mediator, direct handlers, "no dispatch library", …)
+   → use that.
+3. **Existing code decides it** → `Mediator.Abstractions` referenced or handlers implementing
+   `ICommandHandler<,>` / `IQueryHandler<,>` → `mediator`; an `IHandler<,>` in
+   `Application/Common/Handlers/` → `direct handlers`. Record what is there; never migrate
+   because of this rule.
+4. **Nothing decides it (new project)** → **ask the user** before scaffolding, with a one-line
+   trade-off per option and a suggestion from the requirements:
+   - *Mediator* — uniform pipeline (validation, logging) for every caller; pick when HTTP,
+     queues, jobs or gRPC share use cases, or a large team needs enforced consistency.
+   - *Direct handlers* — no dispatch library, explicit calls, arch tests instead of a pipeline;
+     pick when HTTP is the main entry point.
+
+In cases 2–4, write the result into the project `CLAUDE.md` (`Dispatch: mediator` or
+`Dispatch: direct handlers`) so the question is never asked again.
+
+### Root files
+
+**Step 0 — before writing any code** (after the dispatch style is settled), copy the ready-made root files from `.claude/templates/`
 into the new repo root, then adapt each:
 
 1. `global.json` → bump `version` to the installed .NET 10 SDK (`dotnet --version`).
