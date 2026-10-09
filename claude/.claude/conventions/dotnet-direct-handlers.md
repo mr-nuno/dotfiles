@@ -34,18 +34,16 @@ In addition to the `dotnet.md` bootstrap steps, copy from `.claude/templates/`:
 |---|---|
 | `direct-handlers-IHandler.cs` | `Application/Common/Handlers/IHandler.cs` |
 | `direct-handlers-decorators.cs` | `Application/Common/Handlers/HandlerDecorators.cs` |
-| `direct-handlers-architecture-tests.cs` | `tests/Architecture.Tests/ArchitectureTests.cs` |
 
-Replace `{Namespace}` (and `{ApplicationType}` in the arch tests). There is no
-`Application/Common/Behaviors/` folder.
+Replace `{Namespace}`. There is no `Application/Common/Behaviors/` folder. The shared
+`dotnet-architecture-tests.cs` is copied as in `dotnet.md`; keep its **"Direct handlers only"**
+block and delete the Mediator one.
 
 ## Tech stack delta
 
 - **Remove** `Mediator.Abstractions` and `Mediator.SourceGenerator`.
-- **Add** `Scrutor` — scans handlers into DI and applies decorators.
-- **Add** `NetArchTest.Rules` — architecture tests (test project only).
-
-Both are already listed in `templates/Directory.Packages.props` under "Direct-handlers variant only".
+- **Add** `Scrutor` — scans handlers into DI and applies decorators. Listed in
+  `templates/Directory.Packages.props` under "Direct-handlers variant only".
 
 ## Coding patterns (replaces the Endpoints / Requests / Handlers / Validators bullets)
 

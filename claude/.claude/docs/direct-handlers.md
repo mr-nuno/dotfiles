@@ -217,15 +217,11 @@ public sealed class CreateOrderHandlerTests(IntegrationTestWebAppFactory factory
 
 ## Architecture tests
 
-Template: `templates/direct-handlers-architecture-tests.cs` → `tests/Architecture.Tests/`.
-Rules are namespace-based, so they work in every solution layout.
-
-| Rule | Test |
-|---|---|
-| `Application` does not reference FastEndpoints or `Microsoft.AspNetCore.Http` | `Application_Should_NotDependOnHttp_When_Compiled` |
-| No handler constructor takes another handler | `Handlers_Should_NotInjectOtherHandlers_When_Constructed` (reflection) |
-| `Features.X` does not reference `Features.Y` | `Features_Should_NotReferenceOtherFeatures_When_Compiled` |
-| No `*Repository` types | `Solution_Should_NotDeclareRepositories_When_Compiled` |
+Both variants share `templates/dotnet-architecture-tests.cs` (see `.claude/docs/testing.md`,
+"Architecture Tests"): layer direction, nested `Handler`/`Validator`, no cross-feature references,
+no repositories. Keep its **"Direct handlers only"** block and delete the Mediator one. That block
+adds `Handlers_Should_NotInjectOtherHandlers_When_Constructed`: no handler constructor takes an
+`IHandler<,>` or another nested `Handler`.
 
 Review covers what the tests can't: logic in `HandleAsync`, database queries in validators,
 specs written for a single slice, exceptions thrown for expected failures.
