@@ -9,6 +9,10 @@
   FastEndpoints, Moq instead of NSubstitute), follow the project's established
   patterns. These conventions only apply where there is no conflicting
   project-level convention.
+- **Alternative — direct handlers**: a project whose `CLAUDE.md` says
+  `Dispatch: direct handlers` drops Mediator and has endpoints call plain handler classes.
+  Read `.claude/conventions/dotnet-direct-handlers.md` after this file; it overrides only the
+  dispatch-related sections.
 
 ## New Project Bootstrap
 
@@ -23,6 +27,9 @@ into the new repo root, then adapt each:
 6. Docker: copy the matching Dockerfile to its **archetype-specific destination** — `dotnet-api` → `src/{Api}/Dockerfile`, `dotnet-worker` → `src/{Worker}/Dockerfile`, `dotnet-spa-bff` → root `Dockerfile`, `react-nginx` → `frontend/Dockerfile` (build contexts differ; the API path is what `docker-compose.yml` expects). Also copy `docker.dockerignore` → `.dockerignore`, `docker-compose.yml` (API + SQL Server + Seq), and `env.example` → `.env.example`. Replace the `{Api}`/`{Worker}` placeholders with your project names; each Dockerfile's restore layer already lists the referenced `Application`/`Domain`/`Infrastructure` projects (adjust those `COPY` lines to match your actual references — restore needs every referenced csproj present). For a **collapsed layout** (see "Solution Layout" below) copy the matching variant instead — `dotnet-api-single` / `dotnet-worker-single` (1-project) or `dotnet-api-core` / `dotnet-worker-core` (2-project, host + `Core`); the destination path is unchanged. See `.claude/docs/ci-cd-docker.md`.
 
 Once the `Domain` and `Infrastructure` projects exist, also copy `vogen-defaults.cs` → `Domain/Common/VogenDefaults.cs` and `vogen-efcore-converters.cs` → `Infrastructure/Persistence/VogenEfCoreConverters.cs` (replace `{Namespace}`/`{Entity}`).
+
+For the direct-handlers alternative, also copy the `direct-handlers-*` templates (see
+`.claude/conventions/dotnet-direct-handlers.md`, "Bootstrap delta").
 
 All are committed to source control (never gitignored). Only after these exist should you
 scaffold the `Api`/`Application`/`Domain`/`Infrastructure` projects and start on features.

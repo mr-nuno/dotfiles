@@ -19,6 +19,8 @@
 ## .NET Web API Projects
 
 For .NET Web API projects, see `conventions/dotnet.md` for standard conventions and patterns.
+Projects whose `CLAUDE.md` says `Dispatch: direct handlers` also follow
+`conventions/dotnet-direct-handlers.md` (no Mediator; endpoints call handlers directly).
 
 **Exception**: Projects that define their own complete .NET conventions in their project-level CLAUDE.md (e.g., the claude-api-workbench) should use their own conventions — ignore `conventions/dotnet.md` for those projects.
 

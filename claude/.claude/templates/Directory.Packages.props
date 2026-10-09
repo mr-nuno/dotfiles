@@ -40,6 +40,14 @@
     <PackageVersion Include="Ardalis.Specification.EntityFrameworkCore" Version="9.1.0" />
   </ItemGroup>
 
+  <!-- Direct-handlers variant only (.claude/conventions/dotnet-direct-handlers.md).
+       That variant DROPS the two Mediator lines above: handlers are plain classes, scanned and
+       decorated with Scrutor. NetArchTest.Rules is referenced from tests/Architecture.Tests only. -->
+  <ItemGroup>
+    <PackageVersion Include="Scrutor" Version="7.0.0" />
+    <PackageVersion Include="NetArchTest.Rules" Version="1.3.2" />
+  </ItemGroup>
+
   <!-- Domain -->
   <ItemGroup>
     <!-- Source generator for strongly typed IDs and value objects. Stable 8.x only. -->
