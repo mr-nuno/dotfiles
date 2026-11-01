@@ -25,6 +25,10 @@ When bootstrapping a new .NET API with no `Dispatch:` line and nothing in the re
 or code that decides it, ask which dispatch style to use before scaffolding (see
 `conventions/dotnet.md`, "Choose the dispatch style").
 
+A React SPA with a .NET host that signs users in and calls APIs for them is a **BFF**: see
+`docs/bff.md` (Microsoft.Identity.Web + YARP, cookie session, managed identity instead of
+client secrets, one image from `templates/dotnet-spa-bff.Dockerfile`).
+
 **Exception**: Projects that define their own complete .NET conventions in their project-level CLAUDE.md (e.g., the claude-api-workbench) should use their own conventions — ignore `conventions/dotnet.md` for those projects.
 
 ### DO NOT

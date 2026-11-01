@@ -108,3 +108,23 @@ Also add Serilog minimum level overrides in `appsettings.Development.json`:
   }
 }
 ```
+
+## BFF hosts and confidential-client credentials
+
+A .NET host that serves a React SPA and calls APIs for the signed-in user is a **BFF**, not a
+resource server: it runs OIDC sign-in, keeps tokens on the server and gives the browser an
+HttpOnly cookie. See `.claude/docs/bff.md`.
+
+Whenever an app needs its own credential at Entra (a BFF, or a service calling Graph or another
+API), use a **user-assigned managed identity with a federated identity credential** in Azure,
+not a client secret:
+
+```
+EntraId__ClientCredentials__0__SourceType=SignedAssertionFromManagedIdentity
+EntraId__ClientCredentials__0__ManagedIdentityClientId=<managed identity client id>
+```
+
+FIC on the app registration: issuer `https://login.microsoftonline.com/{tenant-id}/v2.0`,
+subject = the identity's object id, audience `api://AzureADTokenExchange`. Microsoft.Identity.Web
+reads the `ClientCredentials` array from configuration, so no code changes. Local development
+uses a short-lived secret in `dotnet user-secrets`.
