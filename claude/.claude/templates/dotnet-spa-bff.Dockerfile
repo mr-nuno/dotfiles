@@ -1,5 +1,7 @@
 # Dockerfile — React SPA served by a .NET BFF from wwwroot (single image, same-origin, no nginx).
-# See .claude/conventions/dotnet.md, .claude/rules/code-docker.md, .claude/docs/ci-cd-docker.md.
+# See .claude/docs/bff.md (the BFF pattern), .claude/conventions/dotnet.md, .claude/docs/ci-cd-docker.md.
+# Runtime config is env vars only (EntraId__*, downstream API settings); in Azure the credential
+# is a managed identity (EntraId__ClientCredentials__0__*), never a client secret.
 #
 # Build context = repo ROOT. Assumes sibling `frontend/` (Vite React) and `backend/` (.NET) dirs.
 #   docker build -t myapp --build-arg VERSION=1.2.3 .

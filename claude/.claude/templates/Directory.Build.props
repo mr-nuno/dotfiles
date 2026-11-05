@@ -31,4 +31,11 @@
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
+  <!-- Test projects (named *.Tests): CA1707 fires on {Method}_Should_{Behavior}_When_{Condition}
+       names and CA1711 on xUnit *Collection types. Scoped by project name, so production code keeps
+       both rules. See .claude/docs/testing.md "Test Project Analyzer Suppressions". -->
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
+    <NoWarn>$(NoWarn);CA1707;CA1711</NoWarn>
+  </PropertyGroup>
+
 </Project>

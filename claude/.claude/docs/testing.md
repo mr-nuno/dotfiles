@@ -33,14 +33,18 @@ The solution enforces `TreatWarningsAsErrors=true` solution-wide (`Directory.Bui
   public sealed class DatabaseCollection : ICollectionFixture<IntegrationTestWebAppFactory>;
   ```
 
-Silence them **per test project** in the test `.csproj` — scoped to test projects only:
+The `Directory.Build.props` template silences them for **test projects only**, recognised by
+name (`*.Tests`), so nothing has to be added per project:
 
 ```xml
-<!-- {Feature}.Tests.csproj — intentional test idioms, scoped to test projects only -->
-<PropertyGroup>
+<PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
   <NoWarn>$(NoWarn);CA1707;CA1711</NoWarn>
 </PropertyGroup>
 ```
+
+A test project with another name (or a solution whose `Directory.Build.props` predates this)
+adds the same `<NoWarn>` to its own `.csproj`. `$(IsTestProject)` can't be the condition: the
+test `.csproj` sets it after `Directory.Build.props` is evaluated.
 
 - **Do NOT** add these to the shared `.editorconfig` — it applies solution-wide and would silence the rules in production code too.
 - **Do NOT** disable `TreatWarningsAsErrors` to work around this — keep the build strict everywhere else.

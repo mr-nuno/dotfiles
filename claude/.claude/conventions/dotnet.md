@@ -227,6 +227,12 @@ public class MyEndpoint : Endpoint<MyRequest, MyResponse>
 - Authorization uses **Entra ID app roles** via policies — never check raw claims/roles directly
 - All endpoints authenticated by default. `AllowAnonymous()` only for health checks and OpenAPI.
 - Authorization belongs in the endpoint `Configure()` — Mediator handlers never perform auth checks.
+- **Exception — BFF**: a .NET host that serves a React SPA and calls APIs on the user's behalf
+  *does* run the login flow (OIDC + HttpOnly cookie, tokens kept on the server, YARP proxy).
+  Follow `.claude/docs/bff.md` for it.
+- **Confidential-client credentials in Azure are managed identities, never client secrets**:
+  a user-assigned managed identity trusted through a federated identity credential on the app
+  registration. Nothing to rotate. A short-lived secret is for local development only.
 
 > See `.claude/docs/auth-and-security.md` for JWT bearer config, policy definitions, and endpoint authorization code.
 
@@ -336,7 +342,9 @@ public class MyEndpoint : Endpoint<MyRequest, MyResponse>
 - Do not use any third-party mapping libraries (no AutoMapper, no Mapperly, no Mapster) — use manual extension methods only
 - Do not leak exception details to clients — return generic error message in production
 - Do not hardcode tenant ID, client ID, or any Entra ID config — use `appsettings.json` / environment variables
-- Do not implement login/token flows in the API — it is a resource server that validates incoming tokens only
+- Do not implement login/token flows in the API — it is a resource server that validates incoming tokens only. A BFF is the one exception (see `.claude/docs/bff.md`)
+- Do not use Duende.BFF — it is commercially licensed. Build a BFF from Microsoft.Identity.Web + YARP (`.claude/docs/bff.md`)
+- Do not put a client secret in Azure config for a confidential client (BFF, daemon calling Graph, …) — use a user-assigned managed identity with a federated identity credential (`EntraId__ClientCredentials__0__SourceType=SignedAssertionFromManagedIdentity`). Secrets expire and need rotation; the managed identity does not
 - Do not use `/api/` prefix or `/v{n}/` version prefix in routes — use plain `/resource` pattern
 - Do not use Swashbuckle or Swagger UI — use `FastEndpoints.Swagger` (NSwag-based) + Scalar
 - Do not create endpoints without a `Summary()` block — every endpoint must document itself for OpenAPI

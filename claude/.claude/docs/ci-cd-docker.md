@@ -61,7 +61,7 @@ destination differs per archetype**, see the table) plus `docker.dockerignore` (
 |---|---|---|---|
 | `dotnet-api.Dockerfile` | `src/{Api}/Dockerfile` | repo root | .NET Web API (path `docker-compose.yml` expects) |
 | `dotnet-worker.Dockerfile` | `src/{Worker}/Dockerfile` | repo root | .NET `BackgroundService` / worker |
-| `dotnet-spa-bff.Dockerfile` | `Dockerfile` (repo root) | repo root (sibling `frontend/` + `backend/`) | React SPA served by the .NET BFF from `wwwroot` (single image) |
+| `dotnet-spa-bff.Dockerfile` | `Dockerfile` (repo root) | repo root (sibling `frontend/` + `backend/`) | React SPA served by the .NET BFF from `wwwroot` (single image; see `.claude/docs/bff.md`) |
 | `react-nginx.Dockerfile` (+ `react-nginx.nginx.conf.template`, `react-nginx.entrypoint.sh`) | `frontend/Dockerfile` | frontend app dir | React SPA served by nginx |
 
 > The .NET templates copy `Directory.Packages.props` / `Directory.Build.props` **before**
