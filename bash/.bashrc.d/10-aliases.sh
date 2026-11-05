@@ -42,7 +42,7 @@ alias reboot='systemctl reboot'
 alias shutdown='shutdown now' 
 
 # LKAB VDI
-alias vdi='npm run vdi --prefix ~/Projects/tools'
+alias vdi='npm run vdi --prefix ~/Projects/personal/tools'
 
 # Home
 alias projects='cd ~/Projects'
