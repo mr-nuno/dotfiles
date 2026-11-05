@@ -21,6 +21,8 @@
 - **RxJS** — state management via `BehaviorSubject` stores, consumed with
   `useObservableState` from `observable-hooks`. No Redux, no Zustand, no Context
   for app state.
+- **MSAL** (`@azure/msal-browser` + `@azure/msal-react`) — Entra ID sign-in with the
+  redirect flow, cache in `sessionStorage`. See "Auth — MSAL / Entra ID sign-in".
 - **Docker / docker-compose** — containerized development and deployment.
 
 ## Coding Style
@@ -108,6 +110,62 @@ export const uiSnapshots = {
   status-specific message (see the `IApiResult` / `errorKeyForStatus` pattern).
 - Re-export new fetchers through the services barrel.
 
+## Auth — MSAL / Entra ID sign-in
+
+The MSAL cache can hold more than one account, and Entra by default signs in whichever
+account the browser used last. Someone who has since signed in elsewhere with another
+account (another tenant, an admin account) then lands on that one and sign-in fails. So
+the app always says which account it wants. Reference implementation:
+`tromb-hr-techpool/src/state/authStore.ts`.
+
+- **Config** (`src/config/authConfig.ts`): export `ORG_DOMAIN` and `ORG_TENANT_ID`; the
+  authority is single-tenant, `https://login.microsoftonline.com/${ORG_TENANT_ID}`.
+  `cacheLocation: "sessionStorage"`.
+- **Follow the account that signs in.** In `main.tsx`, after
+  `await instance.initialize()` and **before** `<MsalProvider>` renders, register an event
+  callback that makes the account from `LOGIN_SUCCESS` / `ACQUIRE_TOKEN_SUCCESS` the
+  active one (only if it is in our tenant). Registering it later misses the redirect
+  response.
+- **Pick the account, don't take `accounts[0]`.** `pickAccount(instance, accounts)`
+  returns: the active account if it is in our tenant → the cached tenant account matching
+  the remembered username → one with an `@ORG_DOMAIN` username → any tenant account →
+  `null`. `useBootstrapAuth` passes it to `useAccount`, and bootstrap calls
+  `setActiveAccount` when the picked account isn't already active.
+- **Fresh sign-in** (`loginRedirect`): send `loginHint` (the current account's username,
+  else the remembered one) and `domainHint: ORG_DOMAIN` (covers a first visit), plus
+  `redirectStartPage: window.location.href` to come back to the same page. Guard with a
+  module flag so only one redirect runs; MSAL refuses a second interaction.
+- **Remember the username** in `localStorage` (org-domain usernames only, wrapped in
+  try/catch). A username only; tokens stay in `sessionStorage`.
+- **Tokens**: `acquireTokenSilent({ scopes: [scope], account })`. On
+  `InteractionRequiredAuthError`, call `acquireTokenRedirect({ scopes: [scope], account,
+  redirectStartPage })` for that scope and account. Passing the account lets MSAL send
+  Entra its hint claims, so Entra signs that account in again instead of showing a chooser.
+
+```ts
+const isOrgAccount = (a: AccountInfo): boolean => a.tenantId === ORG_TENANT_ID;
+const hasOrgDomain = (a: AccountInfo): boolean => a.username.toLowerCase().endsWith(`@${ORG_DOMAIN}`);
+
+export const pickAccount = (instance: IPublicClientApplication, accounts: AccountInfo[]): AccountInfo | null => {
+	const active = instance.getActiveAccount();
+	if (active && isOrgAccount(active)) return active;
+	const org = accounts.filter(isOrgAccount);
+	const hint = rememberedLoginHint()?.toLowerCase();
+	return org.find(a => a.username.toLowerCase() === hint) ?? org.find(hasOrgDomain) ?? org[0] ?? null;
+};
+
+/** Call once in main.tsx, before MsalProvider mounts. */
+export const followSignedInAccount = (instance: IPublicClientApplication): void => {
+	instance.addEventCallback(
+		event => {
+			const account = (event.payload as AuthenticationResult | null)?.account;
+			if (account && isOrgAccount(account)) instance.setActiveAccount(account);
+		},
+		[EventType.LOGIN_SUCCESS, EventType.ACQUIRE_TOKEN_SUCCESS],
+	);
+};
+```
+
 ## Types — three tiers
 
 - `IApi*` — raw JSON from the server, consumed **only** inside the service.
@@ -133,3 +191,9 @@ export const uiSnapshots = {
 - Do **not** use MUI, Redux, Zustand, or React Context for app state.
 - Do **not** export raw `BehaviorSubject`s or read `.value` in render paths.
 - Do **not** use relative imports across feature boundaries — go through an alias.
+- Do **not** use `accounts[0]` as the signed-in account. Use the active account via
+  `pickAccount`.
+- Do **not** call `loginRedirect` without `loginHint` and `domainHint`, and do **not**
+  answer `InteractionRequiredAuthError` with a fresh `loginRedirect`. Re-authenticate the
+  same account with `acquireTokenRedirect({ scopes, account })`.
+- Do **not** keep MSAL tokens in `localStorage`. Only the remembered username goes there.
